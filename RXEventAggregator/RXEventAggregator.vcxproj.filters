@@ -21,13 +21,13 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EventProcessing\Event.h">
+    <ClInclude Include="Lib\EventProcessing\Event.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Misc\DateTime.h">
+    <ClInclude Include="Lib\EventProcessing\EventAggregator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EventProcessing\EventAggregator.h">
+    <ClInclude Include="Lib\EventProcessing\Detail\DateTime.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -36,15 +36,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RXEventAggregator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="EventProcessing\Event.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Misc\DateTime.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="EventProcessing\EventAggregator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Tests\EventAggregatorTest.cpp">

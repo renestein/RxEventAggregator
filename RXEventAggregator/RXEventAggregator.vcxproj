@@ -32,6 +32,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>RXEventAggregator</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <ProjectName>RXEventAggregator</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -213,16 +214,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="EventProcessing\Event.h" />
-    <ClInclude Include="EventProcessing\EventAggregator.h" />
-    <ClInclude Include="Misc\DateTime.h" />
+    <ClInclude Include="Lib\EventProcessing\Event.h" />
+    <ClInclude Include="Lib\EventProcessing\EventAggregator.h" />
+    <ClInclude Include="Lib\EventProcessing\Detail\DateTime.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="EventProcessing\Event.cpp" />
-    <ClCompile Include="EventProcessing\EventAggregator.cpp" />
-    <ClCompile Include="Misc\DateTime.cpp" />
     <ClCompile Include="RXEventAggregator.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
