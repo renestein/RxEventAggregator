@@ -2,6 +2,7 @@
 #include "../EventProcessing/EventAggregator.h"
 #include "../EventProcessing/Event.h"
 #include <string>
+#include <gtest/gtest.h>
 using namespace testing;
 using namespace std;
 using namespace rxcpp::notifications;

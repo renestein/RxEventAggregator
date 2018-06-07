@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include  <memory>
 #include <type_traits>
-#include <rxcpp/subjects/rx-subject.hpp>
+#include <rxcpp/rx.hpp>
 
 namespace RxEventAggregator
 {
