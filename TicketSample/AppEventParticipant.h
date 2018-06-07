@@ -1,9 +1,10 @@
 ﻿#pragma once
-#include <utility>
-#include "Async/AsyncServiceBase.h"
-#include "RStein.Common/CompositeDisposable.h"
+#include <rxcpp/rx-subscription.hpp>
+
 namespace EventProcessing {
-  class Messenger;
+  class Event;
+  template<typename TBE>
+  class EventAggregator;
 }
 
 namespace TicketApp
@@ -12,22 +13,19 @@ namespace TicketApp
     class QuitEvent;
   }
 
-  class AppEventParticipant : public Async::AsyncServiceBase
+  class AppEventParticipant
   {
   public:
-    using MyBase = Async::AsyncServiceBase;
-    AppEventParticipant(const std::shared_ptr<::Schedulers::Scheduler>& scheduler,
-      std::shared_ptr<EventProcessing::Messenger> messenger);
+    AppEventParticipant(std::shared_ptr<EventProcessing::EventAggregator<EventProcessing::Event>> messenger);
   protected:
-    EventProcessing::Messenger& GetMessenger() const;
+    EventProcessing::EventAggregator<EventProcessing::Event>& GetMessenger() const;
     void TryRunQuitLogic();
     virtual void OnQuitEvent(Events::QuitEvent& quitEvent);
-    void OnStart() override;
-    void OnStop() override;
+    virtual void OnStart() ;
+    virtual void OnStop();
     virtual void ReleaseAllSubscriptions() = 0;
   private:
-    std::shared_ptr<EventProcessing::Messenger> m_messenger;
-    RStein::Utils::CancelToken m_quitCancelToken;
-    RStein::Utils::DisposablePtr m_quitEventSubscription;
+    std::shared_ptr<EventProcessing::EventAggregator<EventProcessing::Event>> _messenger;
+    rxcpp::composite_subscription _quitEventSubscription;
   };
 }

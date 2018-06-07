@@ -1,6 +1,7 @@
 ﻿#pragma once
-#include "TicketApp/AppEventParticipant.h"
+#include "../AppEventParticipant.h"
 #include <iostream>
+
 namespace TicketApp
 {
   namespace Infrastructure
@@ -9,15 +10,14 @@ namespace TicketApp
     {
     public:
       using MyBase = AppEventParticipant;
-      Logger(const std::shared_ptr<::Schedulers::Scheduler>& scheduler,
-             const std::shared_ptr<EventProcessing::Messenger>& messenger,
+      Logger(const std::shared_ptr<EventProcessing::EventAggregator<EventProcessing::Event>>& messenger,
              std::ostream& outputStream); 
     protected:
       void OnStart() override;
       void ReleaseAllSubscriptions() override;
     private:
-      std::ostream& m_outputOstream;
-      RStein::Utils::DisposablePtr m_registration;
+      std::ostream& _outputOstream;
+      rxcpp::composite_subscription _registration;
     };
   }
 }

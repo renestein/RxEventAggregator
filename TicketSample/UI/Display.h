@@ -1,6 +1,5 @@
 ﻿#pragma once
-#include "TicketApp/AppEventParticipant.h"
-#include "RStein.Common/CompositeDisposable.h"
+#include "../AppEventParticipant.h"
 
 namespace TicketApp
 {
@@ -19,8 +18,7 @@ namespace TicketApp
     public:
       using TicketType = int;
       using MyBase = AppEventParticipant;
-      Display(const std::shared_ptr<::Schedulers::Scheduler>& scheduler,
-              const std::shared_ptr<EventProcessing::Messenger>& messenger);
+      Display(const std::shared_ptr<EventProcessing::EventAggregator<EventProcessing::Event>>& messenger);
 
       void CancelButtonPressed();
       void SelectTicketButtonPressed(TicketType selectedTicket);
@@ -36,10 +34,10 @@ namespace TicketApp
 
       void ReleaseAllSubscriptions() override;
     private:
-      bool m_cancelButtonEnabled{false};
-      bool m_selectTicketButtonEnabled{false};
-      bool m_paymentButtonEnabled{false};
-      RStein::Utils::CompositeDisposablePtr m_compositeDisposable;
+      bool _cancelButtonEnabled{false};
+      bool _selectTicketButtonEnabled{false};
+      bool _paymentButtonEnabled{false};
+      rxcpp::composite_subscription _compositeSubscription;
     };
   }
 }

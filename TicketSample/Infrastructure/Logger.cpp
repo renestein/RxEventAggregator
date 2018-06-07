@@ -1,9 +1,8 @@
 ﻿#include "stdafx.h"
 #include "Logger.h"
-#include "EventProcessing/Messenger.h"
-#include "TicketApp/Events/EventTypes.h"
+#include "../../RXEventAggregator/Lib/EventProcessing/Event.h"
+#include "../../RXEventAggregator/Lib/EventProcessing/EventAggregator.h"
 #include <chrono>
-#include "Misc/DateTime.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -14,38 +13,31 @@ namespace TicketApp
 {
   namespace Infrastructure
   {
-    Logger::Logger(const std::shared_ptr<::Schedulers::Scheduler>& scheduler,
-                   const std::shared_ptr<EventProcessing::Messenger>& messenger, std::ostream& outputStream) :
-      MyBase{scheduler, messenger},
-      m_outputOstream{outputStream},
-      m_registration{}
+    Logger::Logger(const std::shared_ptr<EventAggregator<Event>>& messenger, std::ostream& outputStream) :
+      MyBase{messenger},
+      _outputOstream{outputStream},
+      _registration{}
     {
     }
 
     void Logger::OnStart()
     {
       MyBase::OnStart();
-      m_registration = GetMessenger().RegisterEventHandler(shared_from_this(), [this](std::shared_ptr<Event> event)
+      _registration = GetMessenger().GetEventStream<Event>().subscribe([this](std::shared_ptr<Event> event)
       {
-        ScheduleFutureOperation([event, this]()
-        {
-          auto currentTime = Misc::DateTime::GetCurrentDateTime();
-          auto eventTime = event->GetEventTime();
-          m_outputOstream << ctime(&currentTime)
-            << " Event data: "
-            << event->ToString()
-            << " Event creation date: "
-            << ctime(&eventTime)
-            << endl
-            << endl;
-        }, "Logger handler");
-      }, APP_EVENT_ALL);
-    }
+        auto eventTime = event->GetEventTime();
+        _outputOstream << " Event data: "
+          << event->ToString()
+          << " Event creation date: "
+          << ctime(&eventTime)
+          << endl
+          << endl;
+      });
+    };
 
     void Logger::ReleaseAllSubscriptions()
     {
-      m_registration->Dispose();
-      m_registration.reset();
+      _registration.unsubscribe();
     }
   }
 }
