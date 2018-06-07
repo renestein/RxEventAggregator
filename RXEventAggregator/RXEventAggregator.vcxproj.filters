@@ -47,5 +47,8 @@
     <ClCompile Include="EventProcessing\EventAggregator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Tests\EventAggregatorTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
