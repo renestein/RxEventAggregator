@@ -148,12 +148,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="EventProcessing\Event.h" />
+    <ClInclude Include="EventProcessing\EventAggregator.h" />
     <ClInclude Include="Misc\DateTime.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="EventProcessing\Event.cpp" />
+    <ClCompile Include="EventProcessing\EventAggregator.cpp" />
     <ClCompile Include="Misc\DateTime.cpp" />
     <ClCompile Include="RXEventAggregator.cpp" />
     <ClCompile Include="stdafx.cpp">
