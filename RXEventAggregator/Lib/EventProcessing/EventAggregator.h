@@ -30,7 +30,7 @@ namespace EventProcessing
   EventAggregator<TBE>::EventAggregator()
   {
     _primaryObservable = _eventSubject.get_observable()
-    .observe_on(rxcpp::identity_current_thread());
+                                      .observe_on(rxcpp::identity_current_thread());
   }
 
   template <typename TBE>
