@@ -22,12 +22,15 @@ namespace EventProcessing
     template <typename TE>
     void PublishEvent(std::shared_ptr<TE> event);
   private:
-    rxcpp::subjects::subject<std::shared_ptr<TBE>> _eventSubject;
+    rxcpp::subjects::subject<std::shared_ptr<TBE>> _eventSubject{};
+    rxcpp::observable<std::shared_ptr<TBE>> _primaryObservable{};
   };
 
   template <typename TBE>
-  EventAggregator<TBE>::EventAggregator() : _eventSubject()
+  EventAggregator<TBE>::EventAggregator()
   {
+    _primaryObservable = _eventSubject.get_observable()
+    .observe_on(rxcpp::identity_current_thread());
   }
 
   template <typename TBE>
@@ -35,15 +38,15 @@ namespace EventProcessing
   auto EventAggregator<TBE>::GetEventStream()
   {
     static_assert(std::is_base_of_v<TBE, TE>, "TE should inherit from TBE");
-    return _eventSubject.get_observable()
-                        .map([](auto& baseEvent)
-                        {
-                          return std::dynamic_pointer_cast<TE>(baseEvent);
-                        })
-                        .filter([](auto& typedEvent)
-                        {
-                          return typedEvent.get() != nullptr;
-                        }).as_dynamic();
+    return _primaryObservable
+           .map([](auto& baseEvent)
+           {
+             return std::dynamic_pointer_cast<TE>(baseEvent);
+           })
+           .filter([](auto& typedEvent)
+           {
+             return typedEvent.get() != nullptr;
+           });
   }
 
   template <typename TBE>
