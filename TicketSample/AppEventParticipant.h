@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <rxcpp/rx-subscription.hpp>
+#include <rxcpp/rx.hpp>
 
 namespace EventProcessing
 {
