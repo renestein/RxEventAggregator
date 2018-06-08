@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include "EventProcessing/Event.h"
 #include <string>
+#include "../../RXEventAggregator/Lib/EventProcessing/Event.h"
 
 namespace TicketApp
 {

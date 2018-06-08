@@ -1,7 +1,6 @@
 ﻿#pragma once
-#include "TicketApp/AppEventParticipant.h"
-#include "RStein.Common/CompositeDisposable.h"
-
+#include "../AppEventParticipant.h"
+#include <memory>
 
 namespace TicketApp
 {
@@ -22,27 +21,25 @@ namespace TicketApp
       const int INVALID_AMOUNT = -1;
       using MyBase = AppEventParticipant;
 
-      PaymentProcessor(const std::shared_ptr<::Schedulers::Scheduler>& scheduler,
-        const std::shared_ptr<EventProcessing::Messenger>& messenger)
-        : AppEventParticipant(scheduler, messenger)
+      PaymentProcessor(const std::shared_ptr<EventProcessing::EventAggregator<EventProcessing::Event>>& messenger)
+        : AppEventParticipant(messenger)
       {
       }
 
       void AddCoin(int amount);
-
+      void Start() override;
     protected:
 
       virtual void OnRestartEvent(const Events::RestartEvent& event);
       virtual void OnTicketSelectedEvent(const Events::TicketSelectedEvent& event);
       virtual void OnPaymentRequestEvent(const Events::PaymentRequestEvent& event);
       virtual void OnCanceledEvent(const Events::CanceledEvent& event);
-      void OnStart() override;
       void ReleaseAllSubscriptions() override;
 
     private:
-      int m_currentAmount = INVALID_AMOUNT;
-      int m_requiredAmount = INVALID_AMOUNT;
-      RStein::Utils::CompositeDisposablePtr m_subscriptions;
+      int _currentAmount = INVALID_AMOUNT;
+      int _requiredAmount = INVALID_AMOUNT;
+      rxcpp::composite_subscription _compositeSubscription;
 
       void publishPaymentReceived();
       void publishUnexpectedEvent() const;

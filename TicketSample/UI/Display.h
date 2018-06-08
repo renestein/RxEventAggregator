@@ -23,10 +23,10 @@ namespace TicketApp
       void CancelButtonPressed();
       void SelectTicketButtonPressed(TicketType selectedTicket);
       void PaymentButtonPressed();
+      void Start() override;
 
 
     protected:
-      void OnStart() override;
       virtual void OnPaymentReceivedEvent(const Events::PaymentReceivedEvent& event);
       virtual void OnRestartEvent(const Events::RestartEvent& e);
       virtual void OnPrintTicketRequestEvent(const Events::PrintTicketRequestEvent& e);

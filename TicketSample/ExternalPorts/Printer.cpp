@@ -1,8 +1,8 @@
 ﻿#include "stdafx.h"
 #include "Printer.h"
-#include "TicketApp/Events/PrintTicketRequestEvent.h"
-#include "TicketApp/Events/PrintTicketResponseEvent.h"
-#include "EventProcessing/Messenger.h"
+#include "../../RXEventAggregator/Lib/EventProcessing/EventAggregator.h"
+#include "../Events/PrintTicketResponseEvent.h"
+#include "../Events/PrintTicketRequestEvent.h"
 #include <memory>
 using namespace std;
 
@@ -10,37 +10,29 @@ namespace TicketApp
 {
   namespace ExternalPorts
   {
-    void Printer::OnStart()
+    void Printer::Start()
     {
-      MyBase::OnStart();
-      m_printRequestSubscription = GetMessenger().RegisterEventHandler<
-        AsyncServiceBase, Events::PrintTicketRequestEvent>(shared_from_this(),
+      MyBase::Start();
+      m_printRequestSubscription = GetMessenger().GetEventStream<Events::PrintTicketRequestEvent>().subscribe(
                                                            [this](
                                                            shared_ptr<Events::PrintTicketRequestEvent>
                                                            printRequestEvent)
                                                            {
-                                                             ScheduleFutureOperation([printRequestEvent, this]
-                                                             {
-                                                               OnPrintRequestEvent(*printRequestEvent);
-                                                             }, "PaymentProcessor.OnPrintRequestEvent");
+                                                               OnPrintRequestEvent(*printRequestEvent);                                                           
                                                            });
     }
 
 
     void Printer::OnPrintRequestEvent(const Events::PrintTicketRequestEvent& event)
     {
-      //print
+
       auto printTicketResponseEvent = make_shared<Events::PrintTicketResponseEvent>();
-      /*ScheduleFutureOperation([printTicketResponseEvent, this]
-      {
-      */
       GetMessenger().PublishEvent(printTicketResponseEvent);
-      /*}, __FUNCTION__);*/
     }
 
     void Printer::ReleaseAllSubscriptions()
     {
-      m_printRequestSubscription->Dispose();
+      m_printRequestSubscription.unsubscribe();
     }
   }
 }

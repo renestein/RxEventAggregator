@@ -37,7 +37,7 @@ namespace TicketApp
     TryRunQuitLogic();
   }
 
-  void AppEventParticipant::OnStart()
+  void AppEventParticipant::Start()
   {
     _quitEventSubscription = GetMessenger().GetEventStream<Events::QuitEvent>().subscribe(
                                                                                           [this](
@@ -48,7 +48,7 @@ namespace TicketApp
                                                                                           });
   }
 
-  void AppEventParticipant::OnStop()
+  void AppEventParticipant::Stop()
   {
     TryRunQuitLogic();
   }

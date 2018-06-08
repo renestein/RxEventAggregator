@@ -1,6 +1,5 @@
 ﻿#pragma once
-#include "TicketApp/AppEventParticipant.h"
-#include "RStein.Common/Disposable.h"
+#include "../AppEventParticipant.h"
 
 namespace TicketApp
 {
@@ -20,18 +19,17 @@ namespace TicketApp
     public:
       using MyBase = AppEventParticipant;
 
-      Printer(const std::shared_ptr<::Schedulers::Scheduler>& scheduler,
-              const std::shared_ptr<EventProcessing::Messenger>& messenger)
-        : MyBase(scheduler, messenger)
+      Printer(const std::shared_ptr<EventProcessing::EventAggregator<EventProcessing::Event>>& messenger)
+        : MyBase(messenger)
       {
       }
 
+      void Start() override;
     protected:
-      void OnStart() override;
       void OnPrintRequestEvent(const Events::PrintTicketRequestEvent& event);
 
       void ReleaseAllSubscriptions() override;
-      RStein::Utils::DisposablePtr m_printRequestSubscription;
+      rxcpp::composite_subscription m_printRequestSubscription;
     };
   }
 }

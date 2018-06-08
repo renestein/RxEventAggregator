@@ -1,12 +1,12 @@
 ﻿#include "stdafx.h"
 #include "PaymentProcessor.h"
-#include "EventProcessing/Messenger.h"
-#include "TicketApp/Events/TicketSelectedEvent.h"
-#include "TicketApp/Events/RestartEvent.h"
-#include "TicketApp/Events/PaymentReceivedEvent.h"
-#include "TicketApp/Events/PaymentRequestEvent.h"
-#include "TicketApp/Events/ErrorEvent.h"
-#include "TicketApp/Events/CanceledEvent.h"
+#include "../Events/ErrorEvent.h"
+#include "../../RXEventAggregator/Lib/EventProcessing/EventAggregator.h"
+#include "../Events/TicketSelectedEvent.h"
+#include "../Events/PaymentReceivedEvent.h"
+#include "../Events/RestartEvent.h"
+#include "../Events/CanceledEvent.h"
+#include "../Events/PaymentRequestEvent.h"
 #include <memory>
 
 using namespace std;
@@ -17,21 +17,18 @@ namespace TicketApp
   {
     void PaymentProcessor::AddCoin(int amount)
     {
-      ScheduleFutureOperation([this, amount]
+      //check amount;
+      if (_currentAmount == INVALID_AMOUNT)
       {
-        //check amount;
-        if (m_currentAmount == INVALID_AMOUNT)
-        {
-          auto errorEvent = make_shared<Events::ErrorEvent>("Error in PaymentProcessor - unexpected amount");
-          GetMessenger().PublishEvent(errorEvent);
-          return;
-        }
+        auto errorEvent = make_shared<Events::ErrorEvent>("Error in PaymentProcessor - unexpected amount");
+        GetMessenger().PublishEvent(errorEvent);
+        return;
+      }
 
-        m_currentAmount += amount;
-        //Nepočítáme s větší částkou a "rozměněním" peněz
+      _currentAmount += amount;
+      //Nepočítáme s větší částkou a "rozměněním" peněz
 
-        publishPaymentReceived();
-      }, __FUNCTION__);
+      publishPaymentReceived();
     }
 
     void PaymentProcessor::OnRestartEvent(const Events::RestartEvent& event)
@@ -47,7 +44,7 @@ namespace TicketApp
 
     void PaymentProcessor::OnTicketSelectedEvent(const Events::TicketSelectedEvent& event)
     {
-      if (m_currentAmount != INVALID_AMOUNT)
+      if (_currentAmount != INVALID_AMOUNT)
       {
         publishUnexpectedEvent();
         return;
@@ -58,21 +55,21 @@ namespace TicketApp
       const int STANDARD_TICKET_ID = 1;
       const int CHILD_TICKET_ID = 2;
 
-      m_currentAmount = 0;
-      m_requiredAmount = event.GetTicketType() == STANDARD_TICKET_ID
-                           ? STANDARD_TICKET_PRICE
-                           : CHILD_TICKET_PRICE;
+      _currentAmount = 0;
+      _requiredAmount = event.GetTicketType() == STANDARD_TICKET_ID
+                          ? STANDARD_TICKET_PRICE
+                          : CHILD_TICKET_PRICE;
     }
 
     void PaymentProcessor::publishPaymentReceived()
     {
-      auto paymentReceivedEvent = make_shared<Events::PaymentReceivedEvent>(m_currentAmount, m_requiredAmount);
+      auto paymentReceivedEvent = make_shared<Events::PaymentReceivedEvent>(_currentAmount, _requiredAmount);
       GetMessenger().PublishEvent(paymentReceivedEvent);
     }
 
     void PaymentProcessor::OnPaymentRequestEvent(const Events::PaymentRequestEvent& event)
     {
-      if (m_currentAmount != 0)
+      if (_currentAmount != 0)
       {
         publishUnexpectedEvent();
       }
@@ -83,15 +80,15 @@ namespace TicketApp
 
     void PaymentProcessor::clearAmounts()
     {
-      m_currentAmount = INVALID_AMOUNT;
-      m_requiredAmount = INVALID_AMOUNT;
+      _currentAmount = INVALID_AMOUNT;
+      _requiredAmount = INVALID_AMOUNT;
     }
 
     void PaymentProcessor::returnMoney()
     {
-      if (m_currentAmount > 0)
+      if (_currentAmount > 0)
       {
-        cout << "Vracim penize: " << m_currentAmount << endl;
+        cout << "Vracim penize: " << _currentAmount << endl;
         clearAmounts();
       }
     }
@@ -101,61 +98,51 @@ namespace TicketApp
       returnMoney();
     }
 
-    void PaymentProcessor::OnStart()
+    void PaymentProcessor::Start()
     {
-      MyBase::OnStart();
-      auto restartEventSubscription = GetMessenger().RegisterEventHandler<
-        AsyncServiceBase, Events::RestartEvent>(shared_from_this(),
-                                                [this](shared_ptr<Events::RestartEvent> restartEvent)
-                                                {
-                                                  ScheduleFutureOperation([restartEvent, this]
-                                                  {
-                                                    OnRestartEvent(*restartEvent);
-                                                  }, "PaymentProcessor.OnRestartEvent");
-                                                });
-      
-      auto canceledEventSubscription = GetMessenger().RegisterEventHandler<
-        AsyncServiceBase, Events::CanceledEvent>(shared_from_this(),
-                                                [this](shared_ptr<Events::CanceledEvent> canceledEvent)
-                                                {
-                                                  ScheduleFutureOperation([canceledEvent, this]
-                                                  {
-                                                    OnCanceledEvent(*canceledEvent);
-                                                  }, "PaymentProcessor.OnCanceledEvent");
-                                                });
+      MyBase::Start();
+      _compositeSubscription = GetMessenger().GetEventStream<Events::RestartEvent>().subscribe(
+                                                                                               [this](
+                                                                                               shared_ptr<Events::
+                                                                                                 RestartEvent>
+                                                                                               restartEvent)
+                                                                                               {
+                                                                                                 OnRestartEvent(*restartEvent);
+                                                                                               });
+
+      auto canceledEventSubscription = GetMessenger()
+                                       .GetEventStream<Events::CanceledEvent>().subscribe(_compositeSubscription,
+                                                                                          [this](
+                                                                                          shared_ptr<Events::
+                                                                                            CanceledEvent>
+                                                                                          canceledEvent)
+                                                                                          {
+                                                                                            OnCanceledEvent(*canceledEvent);
+                                                                                          });
 
 
-      auto ticketSelectedEventSubscription = GetMessenger().RegisterEventHandler<
-        AsyncServiceBase, Events::TicketSelectedEvent>(shared_from_this(),
+      auto ticketSelectedEventSubscription = GetMessenger()
+                                             .GetEventStream<Events::TicketSelectedEvent>().
+                                             subscribe(_compositeSubscription,
                                                        [this](
                                                        shared_ptr<Events::TicketSelectedEvent> ticketSelectedEvent)
                                                        {
-                                                         ScheduleFutureOperation([ticketSelectedEvent, this]
-                                                         {
-                                                           OnTicketSelectedEvent(*ticketSelectedEvent);
-                                                         }, "PaymentProcessor.OnTicketSelectedEvent");
+                                                         OnTicketSelectedEvent(*ticketSelectedEvent);
                                                        });
 
-      auto paymentRequestEventSubscription = GetMessenger().RegisterEventHandler<
-        AsyncServiceBase, Events::PaymentRequestEvent>(shared_from_this(),
+      auto paymentRequestEventSubscription = GetMessenger()
+                                             .GetEventStream<Events::PaymentRequestEvent>().
+                                             subscribe(_compositeSubscription,
                                                        [this](
                                                        shared_ptr<Events::PaymentRequestEvent> paymentRequestEvent)
                                                        {
-                                                         ScheduleFutureOperation([paymentRequestEvent, this]
-                                                         {
-                                                           OnPaymentRequestEvent(*paymentRequestEvent);
-                                                         }, "PaymentProcessor.OnPaymentRequestEvent");
+                                                         OnPaymentRequestEvent(*paymentRequestEvent);
                                                        });
-
-      m_subscriptions = make_shared<RStein::Utils::CompositeDisposableResource>();
-      m_subscriptions->registerDisposable(ticketSelectedEventSubscription);
-      m_subscriptions->registerDisposable(paymentRequestEventSubscription);
-      m_subscriptions->registerDisposable(restartEventSubscription);
     }
 
     void PaymentProcessor::ReleaseAllSubscriptions()
     {
-       m_subscriptions->Dispose();
+      _compositeSubscription.unsubscribe();
     }
   }
 }

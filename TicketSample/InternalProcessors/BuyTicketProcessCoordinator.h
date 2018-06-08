@@ -1,6 +1,5 @@
 ﻿#pragma once
-#include "TicketApp/AppEventParticipant.h"
-#include "RStein.Common/CompositeDisposable.h"
+#include "../AppEventParticipant.h"
 
 namespace TicketApp
 {
@@ -19,17 +18,17 @@ namespace TicketApp
     {
     public:
       using MyBase = AppEventParticipant;
-      BuyTicketProcessCoordinator(const std::shared_ptr<::Schedulers::Scheduler>& scheduler,
-        const std::shared_ptr<EventProcessing::Messenger>& messenger)
-        : AppEventParticipant(scheduler, messenger)
+      BuyTicketProcessCoordinator(const std::shared_ptr<EventProcessing::EventAggregator<EventProcessing::Event>>& messenger)
+        : AppEventParticipant(messenger)
       {
       }
 
+      void Start() override;
+      void Stop() override;
+
     protected:
-      void OnStart() override;
-      void OnStop() override;
       virtual void OnCanceledEvent(Events::CanceledEvent& e);
-      virtual void OnErrorEvent(Events::ErrorEvent& e);
+      virtual void OnError(Events::ErrorEvent& e);
       void DisposeTimer();
       virtual void OnPaymentReceivedEvent(Events::PaymentReceivedEvent& e);
       virtual void OnTicketSelectedEvent(Events::TicketSelectedEvent& e);
@@ -37,12 +36,12 @@ namespace TicketApp
       void ReleaseAllSubscriptions() override;
     private:
       const int INVALID_TICKET = -1;
-      RStein::Utils::CompositeDisposablePtr m_subscriptionsDisposable;
-      RStein::Utils::DisposablePtr m_timerDisposable;
       void publishRestartEvent();
       void publishCanceledEvent();
-      int m_errorCount;
-      int m_selectedTicket = INVALID_TICKET;
+      int _errorCount = 0;
+      int _selectedTicket = INVALID_TICKET;
+      rxcpp::composite_subscription _timerSubscription{};
+      rxcpp::composite_subscription _compositeSubscription{};
     };
 
   }

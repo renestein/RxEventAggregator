@@ -1,9 +1,12 @@
 ﻿#pragma once
-#include "RStein.Common/DisposableResource.h"
 #include <fstream>
+#include "../RXEventAggregator/Lib/EventProcessing/Event.h"
+#include "../RXEventAggregator/Lib/EventProcessing/EventAggregator.h"
 
 namespace EventProcessing {
+  template<typename TBE>
   class Messenger;
+  class Event;
 }
 
 namespace TicketApp {
@@ -52,21 +55,14 @@ public:
   void Stop();
 
 private:
-  std::shared_ptr<Schedulers::ThreadPoolScheduler> m_threadPoolScheduler{};
-  std::shared_ptr<Schedulers::StrictStrandSchedulerDecorator> m_coordinatorScheduler{};
-  std::shared_ptr<Schedulers::StrictStrandSchedulerDecorator> m_messengerScheduler{};
-  std::shared_ptr<TicketApp::InternalProcessors::BuyTicketProcessCoordinator> m_buyTicketProcessor{};
-  std::shared_ptr<Schedulers::StrictStrandSchedulerDecorator> m_paymentProcessorScheduler{};
-  std::shared_ptr<TicketApp::InternalProcessors::PaymentProcessor> m_paymentProcessor{};
-  std::shared_ptr<Schedulers::StrictStrandSchedulerDecorator> m_displayScheduler{};
-  std::shared_ptr<TicketApp::Ui::Display> m_display{};
-  std::shared_ptr<Schedulers::StrictStrandSchedulerDecorator> m_printerScheduler{};
-  std::shared_ptr<TicketApp::ExternalPorts::Printer> m_printer{};
-  std::shared_ptr<Schedulers::StrictStrandSchedulerDecorator> m_loggerScheduler{};
-  std::shared_ptr<TicketApp::Infrastructure::Logger> m_logger{};
-  std::shared_ptr<EventProcessing::Messenger> m_messenger{};
-  std::shared_ptr<RStein::Utils::DisposableResource> m_pseudoOwner{};
-  RStein::Utils::DisposablePtr m_restartSubscription{};
-  std::ofstream m_fileStream{};
-  RStein::Utils::DisposablePtr m_payementReceivedSubscription{};
+ 
+  std::shared_ptr<TicketApp::InternalProcessors::BuyTicketProcessCoordinator> _buyTicketProcessor{};
+  std::shared_ptr<TicketApp::InternalProcessors::PaymentProcessor> _paymentProcessor{}; 
+  std::shared_ptr<TicketApp::Ui::Display> _display{};
+  std::shared_ptr<TicketApp::ExternalPorts::Printer> _printer{};
+  std::shared_ptr<TicketApp::Infrastructure::Logger> _logger{};
+  std::shared_ptr<EventProcessing::EventAggregator<EventProcessing::Event>> _messenger{};
+  std::ofstream _fileStream{};
+  rxcpp::composite_subscription _restartSubscription;
+  rxcpp::composite_subscription _paymentReceivedSubscription;
 };

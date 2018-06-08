@@ -1,94 +1,83 @@
 ﻿#include "stdafx.h"
 #include "BuyTicketProcessCoordinator.h"
-#include "EventProcessing/Messenger.h"
+#include "../../RXEventAggregator/Lib/EventProcessing/EventAggregator.h"
+#include "../Events/RestartEvent.h"
+#include "../Events/QuitEvent.h"
+#include "../Events/CanceledEvent.h"
+#include "../Events/PrintTicketRequestEvent.h"
+#include "../Events/PrintTicketResponseEvent.h"
+#include "../Events/PaymentReceivedEvent.h"
+#include "../Events/ErrorEvent.h"
+#include "../Events/TicketSelectedEvent.h"
+#include <rxcpp/rx.hpp>
 #include <memory>
-#include "TicketApp/Events/RestartEvent.h"
-#include "TicketApp/Events/PaymentReceivedEvent.h"
-#include "TicketApp/Events/CanceledEvent.h"
-#include "TicketApp/Events/ErrorEvent.h"
-#include "TicketApp/Events/PrintTicketRequestEvent.h"
-#include "TicketApp/Events/PrintTicketResponseEvent.h"
-#include "TicketApp/Events/TicketSelectedEvent.h"
-#include "TicketApp/Events/QuitEvent.h"
-#include "Schedulers/TimerDescriptor.h"
+
 using namespace std;
+using namespace rxcpp;
 
 namespace TicketApp
 {
   namespace InternalProcessors
   {
-    void BuyTicketProcessCoordinator::OnStart()
+    void BuyTicketProcessCoordinator::Start()
     {
-      MyBase::OnStart();
-      auto printResponseEventSubscription = GetMessenger().RegisterEventHandler<
-        AsyncServiceBase, Events::PrintTicketResponseEvent>(shared_from_this(),
-                                                            [this](
-                                                            shared_ptr<Events::PrintTicketResponseEvent>
-                                                            printTicketResponseEvent)
-                                                            {
-                                                              ScheduleFutureOperation([printTicketResponseEvent, this]
-                                                                                      {
-                                                                                        OnPrintTicketResponseEvent(*printTicketResponseEvent);
-                                                                                      },
-                                                                                      "BuyTicketProcessCoordinator.OnPrintTicketResponseEvent");
-                                                            });
+      MyBase::Start();
+      _compositeSubscription = GetMessenger()
+                               .GetEventStream<Events::PrintTicketResponseEvent>().subscribe([this](
+                                                                                 shared_ptr<Events::
+                                                                                   PrintTicketResponseEvent>
+                                                                                 printTicketResponseEvent)
+                                                                                 {
+                                                                                   OnPrintTicketResponseEvent(*printTicketResponseEvent);
+                                                                                 });
+      
 
+      GetMessenger()
+        .GetEventStream<Events::PaymentReceivedEvent>().subscribe(_compositeSubscription,
+                                                                  [this](
+                                                                  shared_ptr<Events::
+                                                                    PaymentReceivedEvent>
+                                                                  paymentReceivedEvent)
+                                                                  {
+                                                                    OnPaymentReceivedEvent(*paymentReceivedEvent);
+                                                                  });
+      GetMessenger()
+        .GetEventStream<Events::TicketSelectedEvent>()
+        .subscribe(_compositeSubscription, [this](
+                   shared_ptr<Events::TicketSelectedEvent> ticketSelectedEvent)
+                   {
+                     OnTicketSelectedEvent(*ticketSelectedEvent);
+                   });
 
-      auto paymentEventSubscription = GetMessenger().RegisterEventHandler<
-        AsyncServiceBase, Events::PaymentReceivedEvent>(shared_from_this(),
-                                                        [this](
-                                                        shared_ptr<Events::PaymentReceivedEvent> paymentReceivedEvent)
-                                                        {
-                                                          ScheduleFutureOperation([paymentReceivedEvent, this]
-                                                          {
-                                                            OnPaymentReceivedEvent(*paymentReceivedEvent);
-                                                          }, "BuyTicketProcessCoordinator.OnPaymentReceived");
-                                                        });
+      GetMessenger().GetEventStream<Events::CanceledEvent>()
+                    .subscribe(_compositeSubscription,
+                               [this](
+                               shared_ptr<
+                                 Events::
+                                 CanceledEvent>
+                               canceledEvent)
+                               {
+                                 OnCanceledEvent(*canceledEvent);
+                               });
 
-      auto ticketSelectedEventSubscription = GetMessenger().RegisterEventHandler<
-        AsyncServiceBase, Events::TicketSelectedEvent>(shared_from_this(),
-                                                       [this](
-                                                       shared_ptr<Events::TicketSelectedEvent> ticketSelectedEvent)
-                                                       {
-                                                         ScheduleFutureOperation([ticketSelectedEvent, this]
-                                                         {
-                                                           OnTicketSelectedEvent(*ticketSelectedEvent);
-                                                         }, "BuyTicketProcessCoordinator.OnTicketSelectedEvent");
-                                                       });
+      GetMessenger()
+        .GetEventStream<Events::ErrorEvent>()
+        .subscribe(_compositeSubscription,
+                   [this](
+                   shared_ptr<Events::
+                     ErrorEvent>
+                   errorEvent)
+                   {
+                     OnError(*errorEvent);
+                   });
 
-      auto canceledEventSubscription = GetMessenger().RegisterEventHandler<
-        AsyncServiceBase, Events::CanceledEvent>(shared_from_this(),
-                                                 [this](shared_ptr<Events::CanceledEvent> canceledEvent)
-                                                 {
-                                                   ScheduleFutureOperation([canceledEvent, this]
-                                                   {
-                                                     OnCanceledEvent(*canceledEvent);
-                                                   }, "BuyTicketProcessCoordinator.OnCanceledEvent");
-                                                 });
-
-      auto errorEventSubscription = GetMessenger().RegisterEventHandler<
-        AsyncServiceBase, Events::ErrorEvent>(shared_from_this(),
-                                              [this](shared_ptr<Events::ErrorEvent> errorEvent)
-                                              {
-                                                ScheduleFutureOperation([errorEvent, this]
-                                                {
-                                                  OnErrorEvent(*errorEvent);
-                                                }, "BuyTicketProcessCoordinator.OnErrorEvent");
-                                              });
-
-      m_subscriptionsDisposable = make_shared<RStein::Utils::CompositeDisposableResource>();
-      m_subscriptionsDisposable->registerDisposable(printResponseEventSubscription);
-      m_subscriptionsDisposable->registerDisposable(paymentEventSubscription);
-      m_subscriptionsDisposable->registerDisposable(ticketSelectedEventSubscription);
-      m_subscriptionsDisposable->registerDisposable(canceledEventSubscription);
-      m_subscriptionsDisposable->registerDisposable(errorEventSubscription);
       publishRestartEvent();
     }
 
-    void BuyTicketProcessCoordinator::OnStop()
+    void BuyTicketProcessCoordinator::Stop()
     {
-      MyBase::OnStop();
-       GetMessenger().PublishEvent(make_shared<Events::QuitEvent>());
+      MyBase::Stop();
+      GetMessenger().PublishEvent(make_shared<Events::QuitEvent>());
     }
 
     void BuyTicketProcessCoordinator::publishCanceledEvent()
@@ -96,20 +85,16 @@ namespace TicketApp
       GetMessenger().PublishEvent(make_shared<Events::CanceledEvent>());
     }
 
- 
-    void BuyTicketProcessCoordinator::OnErrorEvent(Events::ErrorEvent& e)
+
+    void BuyTicketProcessCoordinator::OnError(Events::ErrorEvent& e)
     {
-      m_errorCount++;
+      _errorCount++;
       publishRestartEvent();
     }
 
     void BuyTicketProcessCoordinator::DisposeTimer()
     {
-      if (m_timerDisposable)
-      {
-        m_timerDisposable->Dispose();
-        m_timerDisposable.reset();
-      }
+      _timerSubscription.unsubscribe();
     }
 
     void BuyTicketProcessCoordinator::OnPaymentReceivedEvent(Events::PaymentReceivedEvent& e)
@@ -117,37 +102,25 @@ namespace TicketApp
       if (e.GetCurrentAmount() == e.GetRequiredAmount())
       {
         DisposeTimer();
-        GetMessenger().PublishEvent(std::make_shared<Events::PrintTicketRequestEvent>(m_selectedTicket));
+        GetMessenger().PublishEvent(std::make_shared<Events::PrintTicketRequestEvent>(_selectedTicket));
       }
     }
 
     void BuyTicketProcessCoordinator::OnTicketSelectedEvent(Events::TicketSelectedEvent& e)
     {
-      m_selectedTicket = e.GetTicketType();
-      auto timer = make_shared<Schedulers::TimerDescriptor>(boost::posix_time::seconds(10),
-                                                            [this, sharedThis = shared_from_this()](
-                                                            const boost::system::error_code& error,
-                                                            const std::shared_ptr<Schedulers::TimerDescriptor>&
-                                                            desriptor)
-                                                            {
-                                                              publishCanceledEvent();
-                                                            },
-                                                            nullptr,
-                                                            [this, sharedThis = shared_from_this()](
-                                                            const boost::system::error_code& error,
-                                                            const std::shared_ptr<Schedulers::TimerDescriptor>&
-                                                            desriptor)
-                                                            {
-                                                              return false;
-                                                            });
+      const int TIMEOUT_IN_SECONDS = 10;
+      _selectedTicket = e.GetTicketType();
 
-      m_timerDisposable = GetScheduler()->RegisterTimer(timer);
+      _timerSubscription = observable<>::timer(std::chrono::seconds(TIMEOUT_IN_SECONDS)).subscribe([this](auto _)
+      {
+        publishCanceledEvent();
+      });
     }
 
     void BuyTicketProcessCoordinator::publishRestartEvent()
     {
       DisposeTimer();
-      m_selectedTicket = INVALID_TICKET;
+      _selectedTicket = INVALID_TICKET;
       GetMessenger().PublishEvent(make_shared<Events::RestartEvent>());
     }
 
@@ -157,9 +130,9 @@ namespace TicketApp
     }
 
     void BuyTicketProcessCoordinator::ReleaseAllSubscriptions()
-    { 
+    {
       DisposeTimer();
-      m_subscriptionsDisposable->Dispose();
+      _compositeSubscription.unsubscribe();
     }
 
     void BuyTicketProcessCoordinator::OnCanceledEvent(Events::CanceledEvent& e)

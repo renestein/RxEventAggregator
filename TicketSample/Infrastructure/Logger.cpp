@@ -20,9 +20,9 @@ namespace TicketApp
     {
     }
 
-    void Logger::OnStart()
+    void Logger::Start()
     {
-      MyBase::OnStart();
+      MyBase::Start();
       _registration = GetMessenger().GetEventStream<Event>().subscribe([this](std::shared_ptr<Event> event)
       {
         auto eventTime = event->GetEventTime();

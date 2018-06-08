@@ -37,10 +37,10 @@ namespace TicketApp
       GetMessenger().PublishEvent(std::make_shared<PaymentRequestEvent>());
     }
 
-    void Display::OnStart()
+    void Display::Start()
     {
       cout << "Inicializace. Prosim cekejte..." << endl;
-      MyBase::OnStart();
+      MyBase::Start();
       _compositeSubscription = GetMessenger().GetEventStream<PaymentReceivedEvent>().subscribe(
                                                                                                    [this](
                                                                                                    shared_ptr<

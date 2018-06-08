@@ -12,8 +12,8 @@ namespace TicketApp
       using MyBase = AppEventParticipant;
       Logger(const std::shared_ptr<EventProcessing::EventAggregator<EventProcessing::Event>>& messenger,
              std::ostream& outputStream); 
+      void Start() override;
     protected:
-      void OnStart() override;
       void ReleaseAllSubscriptions() override;
     private:
       std::ostream& _outputOstream;
