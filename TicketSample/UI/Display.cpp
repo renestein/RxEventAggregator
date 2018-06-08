@@ -92,6 +92,7 @@ namespace TicketApp
 
     void Display::OnRestartEvent(const RestartEvent& e)
     {
+      std::cout << std::this_thread::get_id();
       _selectTicketButtonEnabled = true;
       _paymentButtonEnabled = _cancelButtonEnabled = false;
       cout << "Vyberte typ listku." << endl;
@@ -104,6 +105,7 @@ namespace TicketApp
 
     void Display::OnPrintTicketResponseEvent(const PrintTicketResponseEvent& e)
     {
+      std::cout << std::this_thread::get_id();
       cout << "Dekujeme za zakoupeni listku." << endl;
     }
 

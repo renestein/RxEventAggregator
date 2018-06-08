@@ -111,7 +111,11 @@ namespace TicketApp
       const int TIMEOUT_IN_SECONDS = 10;
       _selectedTicket = e.GetTicketType();
 
-      _timerSubscription = observable<>::timer(std::chrono::seconds(TIMEOUT_IN_SECONDS)).subscribe([this](auto _)
+       auto eventLoop = observe_on_event_loop();
+      _timerSubscription = observable<>::timer(observe_on_event_loop().now()
+                                        + std::chrono::seconds(TIMEOUT_IN_SECONDS),
+                                        eventLoop)
+      .subscribe([this](auto _)
       {
         publishCanceledEvent();
       });

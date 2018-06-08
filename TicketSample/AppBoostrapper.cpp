@@ -28,6 +28,7 @@ void AppBoostrapper::Start()
   _logger = make_shared<Logger>(_messenger, _fileStream);
   _logger->Start();
 
+
   _paymentProcessor = make_shared<PaymentProcessor>(_messenger);
   _paymentProcessor->Start();
 
@@ -37,6 +38,7 @@ void AppBoostrapper::Start()
   _display = make_shared<Display>(_messenger);
   _display->Start();
 
+
   _restartSubscription = _messenger->GetEventStream<RestartEvent>().subscribe([this](shared_ptr<RestartEvent> event)
   {
     const int STANDARD_TICKET = 1;
@@ -45,26 +47,26 @@ void AppBoostrapper::Start()
   });
 
   _paymentReceivedSubscription = _messenger->GetEventStream<PaymentReceivedEvent>().
-                                              subscribe([this](shared_ptr<PaymentReceivedEvent> event)
-                                              {
-                                                if (event->GetCurrentAmount() != 0)
-                                                {
-                                                  return;
-                                                }
+                                             subscribe([this](shared_ptr<PaymentReceivedEvent> event)
+                                             {
+                                               if (event->GetCurrentAmount() != 0)
+                                               {
+                                                 return;
+                                               }
 
-                                                static bool payFullPrice = true;
-                                                const int STANDARD_TICKET_PRICE = 20;
+                                               static bool payFullPrice = true;
+                                               const int STANDARD_TICKET_PRICE = 20;
 
-                                                auto payPrice = payFullPrice
-                                                                  ? STANDARD_TICKET_PRICE
-                                                                  : STANDARD_TICKET_PRICE - 1;
+                                               auto payPrice = payFullPrice
+                                                                 ? STANDARD_TICKET_PRICE
+                                                                 : STANDARD_TICKET_PRICE - 1;
 
-                                                payFullPrice = !payFullPrice;
-                                                for (auto i = 0; i < payPrice; i++)
-                                                {
-                                                  _paymentProcessor->AddCoin(1);
-                                                }
-                                              });
+                                               payFullPrice = !payFullPrice;
+                                               for (auto i = 0; i < payPrice; i++)
+                                               {
+                                                 _paymentProcessor->AddCoin(1);
+                                               }
+                                             });
 
   ///Simulate inputs (dirty and fragile code)
 

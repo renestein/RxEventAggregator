@@ -25,7 +25,7 @@ namespace TicketApp
 
     void Printer::OnPrintRequestEvent(const Events::PrintTicketRequestEvent& event)
     {
-
+      
       auto printTicketResponseEvent = make_shared<Events::PrintTicketResponseEvent>();
       GetMessenger().PublishEvent(printTicketResponseEvent);
     }
