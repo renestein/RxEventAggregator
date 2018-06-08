@@ -21,12 +21,24 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Lib\EventProcessing\Event.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\EventProcessing\EventAggregator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\EventProcessing\Detail\DateTime.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RXEventAggregator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests\EventAggregatorTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

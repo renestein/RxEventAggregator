@@ -16,6 +16,7 @@ packages/
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
+[Dd]ebugNoPch/
 [Rr]elease/
 [Rr]eleases/
 x64/
