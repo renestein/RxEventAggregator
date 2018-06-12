@@ -14,20 +14,22 @@ namespace TicketApp
     {
       MyBase::Start();
       m_printRequestSubscription = GetMessenger().GetEventStream<Events::PrintTicketRequestEvent>().subscribe(
-                                                           [this](
-                                                           shared_ptr<Events::PrintTicketRequestEvent>
-                                                           printRequestEvent)
-                                                           {
-                                                               OnPrintRequestEvent(*printRequestEvent);                                                           
-                                                           });
+        [this](
+          shared_ptr<Events::PrintTicketRequestEvent>
+          printRequestEvent)
+      {
+        OnPrintRequestEvent(*printRequestEvent);
+      });
     }
 
 
     void Printer::OnPrintRequestEvent(const Events::PrintTicketRequestEvent& event)
     {
-      
-      auto printTicketResponseEvent = make_shared<Events::PrintTicketResponseEvent>();
-      GetMessenger().PublishEvent(printTicketResponseEvent);
+      std::async(launch::async, [this]()
+      {
+        auto printTicketResponseEvent = make_shared<Events::PrintTicketResponseEvent>();
+        GetMessenger().PublishEvent(printTicketResponseEvent);
+      });
     }
 
     void Printer::ReleaseAllSubscriptions()

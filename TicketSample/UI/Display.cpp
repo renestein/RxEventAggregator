@@ -8,6 +8,7 @@
 #include "../Events/PrintTicketRequestEvent.h"
 #include "../Events/PrintTicketResponseEvent.h"
 #include "../Events/CanceledEvent.h"
+#include "../Events/EventTypes.h"
 #include <memory>
 #include <iostream>
 using namespace std;
@@ -41,39 +42,46 @@ namespace TicketApp
     {
       cout << "Inicializace. Prosim cekejte..." << endl;
       MyBase::Start();
-      _compositeSubscription = GetMessenger().GetEventStream<PaymentReceivedEvent>().subscribe(
-                                                                                                   [this](
-                                                                                                   shared_ptr<
-                                                                                                     PaymentReceivedEvent
-                                                                                                   > paymentReceivedEvent)
-                                                                                                   {
-                                                                                                     OnPaymentReceivedEvent(*paymentReceivedEvent);
-                                                                                                   });
+      _compositeSubscription = GetMessenger()
+                               .GetEventStream()
+                               .filter([](auto event)
+                               {
+                                 auto eventType = event->GetEventType();
+                                 return eventType == APP_EVENT_PAYMENT_RECEIVED ||
+                                        eventType == APP_EVENT_RESTART ||
+                                        eventType == APP_EVENT_PRINT_TICKET_REQUEST ||
+                                        eventType == APP_EVENT_PRINT_TICKET_RESPONSE;
+                               }).subscribe([this](auto event)
+                               {
+                                 switch (event->GetEventType())
+                                 {
+                                 case APP_EVENT_PAYMENT_RECEIVED:
+                                   {
+                                     OnPaymentReceivedEvent(*dynamic_pointer_cast<PaymentReceivedEvent>(event));
+                                     break;
+                                   }
 
-      GetMessenger().GetEventStream<RestartEvent>().subscribe(_compositeSubscription,
-                                                              [this](
-                                                              shared_ptr<RestartEvent>
-                                                              restartEvent)
-                                                              {
-                                                                OnRestartEvent(*restartEvent);
-                                                              });
+                                 case APP_EVENT_RESTART:
+                                   {
+                                     OnRestartEvent(*dynamic_pointer_cast<RestartEvent>(event));
+                                     break;
+                                   }
+                                 case APP_EVENT_PRINT_TICKET_REQUEST:
+                                   {
+                                     OnPrintTicketRequestEvent(*dynamic_pointer_cast<PrintTicketRequestEvent>(event));
+                                     break;
+                                   }
 
-      GetMessenger().GetEventStream<PrintTicketRequestEvent>().subscribe(_compositeSubscription,
-                                                                         [this](
-                                                                         shared_ptr<PrintTicketRequestEvent>
-                                                                         printTicketRequestEvent)
-                                                                         {
-                                                                           OnPrintTicketRequestEvent(*printTicketRequestEvent);
-                                                                         });
+                                 case APP_EVENT_PRINT_TICKET_RESPONSE:
+                                   {
+                                     OnPrintTicketResponseEvent(*dynamic_pointer_cast<PrintTicketResponseEvent>(event));
+                                     break;
+                                   }
 
-
-      GetMessenger().GetEventStream<PrintTicketResponseEvent>().subscribe(_compositeSubscription,
-                                                                          [this](
-                                                                          shared_ptr<PrintTicketResponseEvent>
-                                                                          printTicketResponseEvent)
-                                                                          {
-                                                                            OnPrintTicketResponseEvent(*printTicketResponseEvent);
-                                                                          });
+                                 default:
+                                   break;
+                                 }
+                               });
     }
 
     void Display::OnPaymentReceivedEvent(const PaymentReceivedEvent& event)

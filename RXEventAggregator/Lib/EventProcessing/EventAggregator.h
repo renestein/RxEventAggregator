@@ -19,6 +19,7 @@ namespace EventProcessing
     ~EventAggregator() = default;
     template <typename TE>
     auto GetEventStream();
+    auto GetEventStream();
     template <typename TE>
     void PublishEvent(std::shared_ptr<TE> event);
   private:
@@ -30,10 +31,15 @@ namespace EventProcessing
   EventAggregator<TBE>::EventAggregator()
   {
     _primaryObservable = _eventSubject.get_observable()
-    .observe_on(rxcpp::identity_current_thread());
+                                      .filter([](auto& typedEvent)
+                                      {
+                                        return typedEvent.get() != nullptr;
+                                      });
+                                      //.observe_on(rxcpp::identity_current_thread());
   }
 
   template <typename TBE>
+
   template <typename TE>
   auto EventAggregator<TBE>::GetEventStream()
   {
@@ -47,6 +53,12 @@ namespace EventProcessing
            {
              return typedEvent.get() != nullptr;
            });
+  }
+
+  template <typename TBE>
+  auto EventAggregator<TBE>::GetEventStream()
+  {
+    return _primaryObservable;
   }
 
   template <typename TBE>
