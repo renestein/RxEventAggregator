@@ -34,12 +34,10 @@ namespace EventProcessing
                                       .filter([](auto& typedEvent)
                                       {
                                         return typedEvent.get() != nullptr;
-                                      });
-                                      //.observe_on(rxcpp::identity_current_thread());
+                                      }).observe_on(rxcpp::observe_on_event_loop());
   }
 
   template <typename TBE>
-
   template <typename TE>
   auto EventAggregator<TBE>::GetEventStream()
   {
@@ -66,7 +64,10 @@ namespace EventProcessing
   void EventAggregator<TBE>::PublishEvent(std::shared_ptr<TE> event)
   {
     static_assert(std::is_base_of_v<TBE, TE>, "TE should inherit from TBE");
-    _eventSubject.get_subscriber()
-                 .on_next(event);
+    std::async(std::launch::async, [this, event]()
+    {
+      _eventSubject.get_subscriber()
+                   .on_next(event);
+    });
   }
 }
