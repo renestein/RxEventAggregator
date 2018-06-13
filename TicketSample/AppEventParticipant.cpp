@@ -32,9 +32,9 @@ namespace TicketApp
     ReleaseAllSubscriptions();
   }
 
-  void AppEventParticipant::OnQuitEvent(Events::QuitEvent& quitEvent)
+   void AppEventParticipant::OnQuitEvent(Events::QuitEvent& quitEvent)
   {
-    TryRunQuitLogic();
+    //TryRunQuitLogic();
   }
 
   void AppEventParticipant::Start()

@@ -37,7 +37,7 @@ namespace TicketApp
 
     void Logger::ReleaseAllSubscriptions()
     {
-      _registration.unsubscribe();
+      //_registration.unsubscribe();
     }
   }
 }

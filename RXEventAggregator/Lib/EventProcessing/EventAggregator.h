@@ -22,15 +22,16 @@ namespace EventProcessing
     template <typename TE>
     void PublishEvent(std::shared_ptr<TE> event);
   private:
+    rxcpp::connectable_observable<std::shared_ptr<TBE>> _primaryObservable{};
     rxcpp::subjects::subject<std::shared_ptr<TBE>> _eventSubject{};
-    rxcpp::observable<std::shared_ptr<TBE>> _primaryObservable{};
   };
 
   template <typename TBE>
   EventAggregator<TBE>::EventAggregator()
   {
     _primaryObservable = _eventSubject.get_observable()
-                                      .observe_on(rxcpp::identity_current_thread());
+                          .publish_synchronized(rxcpp::observe_on_new_thread());
+    _primaryObservable.connect_forever();
   }
 
   template <typename TBE>
